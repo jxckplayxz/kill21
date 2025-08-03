@@ -1,108 +1,44 @@
+const fetch = require('node-fetch');
 const { Client, GatewayIntentBits } = require('discord.js');
-const fetch = require('node-fetch'); // npm install node-fetch@2
 
-(async () => {
-  const tokenRes = await fetch('https://voidy-script.neocities.org/gamepage');
-  const token = (await tokenRes.text()).trim();
+async function startBot() {
+  // URL where your token is stored as plain text or JSON
+  const tokenUrl = 'https://voidy-script.neocities.org/gamepage'; // or JSON endpoint
 
-  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  // Fetch token (adjust if JSON)
+  const res = await fetch(tokenUrl);
+  if (!res.ok) {
+    console.error('Failed to fetch token:', res.statusText);
+    process.exit(1);
+  }
+
+  // If raw text token
+  const token = (await res.text()).trim();
+
+  // Or if JSON response, e.g. { "token": "ABC" }
+  // const data = await res.json();
+  // const token = data.token;
+
+  if (!token) {
+    console.error('Token is empty!');
+    process.exit(1);
+  }
+
+  const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
   client.once('ready', () => {
-    console.log(`✅ Logged in as ${client.user.tag}`);
+    console.log(`Logged in as ${client.user.tag}`);
   });
 
-  client.login(token);
-})();
+  client.on('messageCreate', (message) => {
+    if (message.author.bot) return;
+    // Your commands here
+    if (message.content === '!ping') {
+      message.channel.send('Pong!');
+    }
+  });
 
+  await client.login(token);
+}
 
-// Slash commands
-const commands = [
-  new SlashCommandBuilder()
-    .setName('panel')
-    .setDescription('Shows usage guide for the bot'),
-  new SlashCommandBuilder()
-    .setName('script')
-    .setDescription('Sends the latest Vertex Z script'),
-  new SlashCommandBuilder()
-    .setName('api')
-    .setDescription('Fetch or store your webhook')
-    .addSubcommand(sub =>
-      sub.setName('fetch')
-        .setDescription('Store your webhook URL')
-        .addStringOption(option =>
-          option.setName('url')
-            .setDescription('Your Discord Webhook URL')
-            .setRequired(true)
-        )
-    )
-].map(cmd => cmd.toJSON());
-
-const rest = new REST({ version: '10' }).setToken(token);
-(async () => {
-  try {
-    console.log('Registering slash commands...');
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-    console.log('Commands registered.');
-  } catch (err) {
-    console.error(err);
-  }
-})();
-
-// Slash Command Handler
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const { commandName } = interaction;
-
-  if (commandName === 'panel') {
-    await interaction.reply({
-      content: `🛠 **Vertex Z Bot Usage**
-Use:
-• \`/script\` — to get the Roblox script  
-• \`/api fetch <webhook>\` — to store your Discord webhook  
-• \`!send <webhook> <message>\` — send a message to a webhook
-`,
-      ephemeral: true
-    });
-
-  } else if (commandName === 'script') {
-    await interaction.reply({
-      content: `\`\`\`lua
--- Vertex Z Script
-loadstring(game:HttpGet("https://yourwebsite.com/vertexz.lua"))()
-\`\`\``,
-      ephemeral: true
-    });
-
-  } else if (commandName === 'api') {
-    const url = interaction.options.getString('url');
-    webhooks.set(interaction.user.id, url);
-    await interaction.reply({ content: `✅ Webhook saved!`, ephemeral: true });
-  }
-});
-
-// Message command (!send)
-client.on('messageCreate', async message => {
-  if (!message.content.startsWith('!send')) return;
-
-  const args = message.content.split(' ').slice(1);
-  const [url, ...msgParts] = args;
-  const msg = msgParts.join(' ');
-
-  if (!url || !msg) {
-    return message.reply('Usage: `!send <webhook> <message>`');
-  }
-
-  try {
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: msg })
-    });
-    message.reply('✅ Message sent to webhook.');
-  } catch (err) {
-    message.reply('❌ Failed to send webhook. Make sure it is valid.');
-  }
-});
-
-client.login(token);
+startBot().catch(console.error);
