@@ -1,17 +1,19 @@
-const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } = require('discord.js');
-const fetch = require('node-fetch');
+const { Client, GatewayIntentBits } = require('discord.js');
+const fetch = require('node-fetch'); // npm install node-fetch@2
 
-const token = 'MTM1MjY0NDE0Nzc4MTE3NzQxNw.GBZfV8.0TcorE79UIbAUsCXQYzf-utk8RBfD-KZuP4g98';
-const clientId = '1352644147781177417';
-const guildId = '1397384666369232977';
+(async () => {
+  const tokenRes = await fetch('https://voidy-script.neocities.org/gamepage');
+  const token = (await tokenRes.text()).trim();
 
-const webhooks = new Map(); // Temporary memory-based store
+  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+  client.once('ready', () => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
+  });
 
-client.once('ready', () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
-});
+  client.login(token);
+})();
+
 
 // Slash commands
 const commands = [
