@@ -1,0 +1,14 @@
+{
+  "name": "vertex-z-bot",
+  "version": "1.0.0",
+  "description": "Discord bot for Vertex Z Roblox script",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.0.0",
+    "fs": "^0.0.1-security",
+    "node-fetch": "^2.6.7"
+  }
+}
